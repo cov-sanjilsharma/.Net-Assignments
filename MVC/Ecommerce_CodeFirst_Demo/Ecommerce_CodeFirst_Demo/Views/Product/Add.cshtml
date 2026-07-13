@@ -1,0 +1,24 @@
+﻿
+
+<form action="Add" method="post">
+
+ <table class="table-bordered " cellpadding="5">
+   
+
+        <tr>
+            <th>Name</th>
+            <td><input type="text"  name="Name" value="@Model?.Name"/> </td>
+        </tr>
+        <tr>
+            <th>Price</th>
+            <td><input type="number" step="0.01" name="Price" value="@Model?.Price" /> </td>
+        </tr>
+        <tr>
+            <th>Quantity</th>
+            <td><input type="number" name="Quantity" value="@Model?.Quantity" /> </td>
+        </tr>
+ </table>
+ <button type="submit" class="btn-outline-primary">
+     Add Product
+ </button>
+</form>

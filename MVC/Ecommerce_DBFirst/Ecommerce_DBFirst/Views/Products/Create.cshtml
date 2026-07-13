@@ -1,0 +1,43 @@
+﻿@model ProductDTO
+
+<h2>Add New Product</h2>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <p style="color:red">@ViewBag.ErrorMessage</p>
+}
+
+
+<form method="post" action="/AddProduct">
+    <table>
+        <tr>
+            <td>Product Name:</td>
+            <td><input type="text" name="ProductName" value="@Model?.ProductName" /></td>
+        </tr>
+        <tr>
+            <td>Price:</td>
+            <td><input type="number" name="Price" step="0.01" value="@Model?.Price"/></td>
+        </tr>
+        <tr>
+            <td>Stock:</td>
+            <td><input type="number" name="StockQuantit" value="@Model?.StockQuantit" /></td>
+        </tr>
+        <tr>
+            <td>Category Id:</td>
+            <td>
+                <select name="CategoryId">
+                    @foreach (var cat in ViewBag.Categories)
+                    {
+                        <option value="@cat.CategoryId">@cat.CategoryName</option>
+                    }
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><button type="submit">Add Product</button></td>
+        </tr>
+    </table>
+</form>
+
+<a href="/ViewAllProducts">Back to List</a>

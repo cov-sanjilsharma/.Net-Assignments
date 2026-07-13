@@ -1,0 +1,29 @@
+﻿@model List<Category>
+
+<h2>@ViewBag.PageTitle</h2>
+
+<br />
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Category Id</th>
+        <th>Category Name</th>
+    </tr>
+    @foreach (var category in Model)
+    {
+        <tr>
+            <td>@category.CategoryId</td>
+            <td>@category.CategoryName</td>
+
+            @if (User.IsInRole("Admin"))
+            {
+                <td> <a href="/UpdateCategory/@category.CategoryId">Edit Category Details</a> </td>
+            }
+        </tr>
+    }
+</table>
+
+@if (User.IsInRole("Admin"))
+{
+    <a href="/AddCategory">Add New Category</a>
+}

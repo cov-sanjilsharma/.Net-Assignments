@@ -1,0 +1,25 @@
+﻿<h1>Enter Product ID</h1>
+
+@* <form asp-controller="Product" asp-action="Details" method="post">
+
+    <input type="number" name="id" placeholder="Enter ID" />
+
+    <button type="submit">
+        Search
+    </button>
+
+</form> *@
+
+@using (Html.BeginForm("Details", "Product",FormMethod.Post))
+{
+    @Html.TextBox(
+    
+        "id",
+        null,
+        new
+        {
+type = "number",
+placeholder="Enter ID"
+        })
+    <button type ="submit">Search</button>
+}

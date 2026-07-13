@@ -1,0 +1,47 @@
+﻿<h2>Edit Product</h2>
+
+<form method="post" action="/UpdateProduct">
+    <input type="hidden" name="ProductId" value="@Model.ProductId" />
+    <table>
+        @* <tr>
+            <td>Product Id:</td>
+            <td><input type="number" name="ProductId" value="@Model?.ProductId"/></td>
+        </tr>
+        <tr> *@
+            <td>Product Name:</td>
+            <td><input type="text" name="ProductName" value="@Model?.ProductName" /></td>
+        </tr>
+        <tr>
+            <td>Price:</td>
+            <td><input type="number" name="Price" step="0.01" value="@Model?.Price" /></td>
+        </tr>
+        <tr>
+            <td>Stock:</td>
+            <td><input type="number" name="StockQuantit" value="@Model?.StockQuantit" /></td>
+        </tr>
+        <tr>
+            <td>Category Id:</td>
+            <td>
+                <select name="CategoryId">
+                    @foreach (var cat in ViewBag.Categories)
+                    {
+                        if (cat.CategoryId == Model?.CategoryId)
+                        {
+                            <option value="@cat.CategoryId" selected>@cat.CategoryName</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.CategoryId">@cat.CategoryName</option>
+                        }
+                    }
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><button type="submit">Edit Product</button></td>
+        </tr>
+    </table>
+</form>
+
+<a href="/ViewAllProducts">Back to List</a>

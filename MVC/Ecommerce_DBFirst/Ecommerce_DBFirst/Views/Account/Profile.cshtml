@@ -1,0 +1,26 @@
+﻿@model Ecommerce_DBFirst.Models.ApplicationUser
+@{
+    ViewData["Title"] = ViewBag.PageTitle;
+}
+
+<h2>@ViewBag.PageTitle</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <dl class="row">
+            <dt class="col-sm-4">Name</dt>
+            <dd class="col-sm-8">@Model.FullName</dd>
+
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8">@Model.Email</dd>
+
+            <dt class="col-sm-4">User ID</dt>
+            <dd class="col-sm-8">@Model.Id</dd>
+        </dl>
+
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            <button type="submit" class="btn btn-outline-danger">Log Out</button>
+        </form>
+    </div>
+</div>
