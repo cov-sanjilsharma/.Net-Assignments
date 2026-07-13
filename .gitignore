@@ -1,0 +1,98 @@
+cat << 'EOF'
+## .NET / Visual Studio gitignore
+
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Visual Studio cache/options
+.vs/
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Database files (local dev DBs, avoid committing real data)
+*.mdf
+*.ldf
+*.ndf
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Node/npm (if any front-end tooling was used)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+EOF
+Output
+
+## .NET / Visual Studio gitignore
+
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Visual Studio cache/options
+.vs/
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Database files (local dev DBs, avoid committing real data)
+*.mdf
+*.ldf
+*.ndf
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Node/npm (if any front-end tooling was used)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
