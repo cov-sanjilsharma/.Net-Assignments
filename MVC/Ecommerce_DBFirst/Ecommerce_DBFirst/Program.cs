@@ -1,5 +1,6 @@
 using Ecommerce_DBFirst.Mapping;
 using Ecommerce_DBFirst.Models;
+using Ecommerce_DBFirst.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<EcommerceDbfirstDbContext>(options =>
@@ -15,7 +19,7 @@ builder.Services.AddDbContext<EcommerceDbfirstDbContext>(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddAutoMapper(cfg => { },typeof(MappingProfile));
+builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {

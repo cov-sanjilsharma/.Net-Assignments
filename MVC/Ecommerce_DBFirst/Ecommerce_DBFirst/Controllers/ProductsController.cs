@@ -1,20 +1,20 @@
-﻿using AutoMapper;
-using Ecommerce_DBFirst.Models;
-using Microsoft.AspNetCore.Mvc;
-using Ecommerce_DBFirst.Dtos;
+﻿using Ecommerce_DBFirst.Dtos;
+using Ecommerce_DBFirst.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce_DBFirst.Controllers
 {
     [Authorize]
     public class ProductsController : Controller
     {
-        private readonly EcommerceDbfirstDbContext _dbfirstDbContext;
-        private readonly IMapper _mapper;
-        public ProductsController(EcommerceDbfirstDbContext dbfirstDbContext, IMapper mapper)
+        private readonly IProductService _productService;
+        private readonly ILogger<ProductsController> _logger;
+
+        public ProductsController(IProductService productService, ILogger<ProductsController> logger)
         {
-            _dbfirstDbContext = dbfirstDbContext;
-            _mapper = mapper;
+            _productService = productService;
+            _logger = logger;
         }
 
         // List all products
@@ -22,69 +22,55 @@ namespace Ecommerce_DBFirst.Controllers
         [Route("ViewAllProducts")]
         public IActionResult Index(int? categoryId, string sortBy, string search)
         {
-            ViewBag.PageTitle = "Displaying All Products";
-            var categories = _dbfirstDbContext.Categories.ToList();
-            ViewBag.Categories = categories;
-
-            var products = _dbfirstDbContext.Products.AsQueryable();
-
-            if (categoryId.HasValue)
-                products = products.Where(product => product.CategoryId == categoryId);
-
-            if (sortBy == "price")
-                products = products.OrderBy(product => product.Price);
-
-            if (!string.IsNullOrEmpty(search))
-                products = products.Where(product => product.ProductName.Contains(search));
-
-            var productDtos = _mapper.Map<List<ProductDTO>>(products.ToList());
-
-            foreach (var dto in productDtos)
+            try
             {
-                dto.CategoryName = categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId)?.CategoryName;
+                //throw new Exception("Test exception for global handler verification");   // TEMPORARY - remove after testing
+                ViewBag.PageTitle = "Displaying All Products";
+                ViewBag.Categories = _productService.GetAllCategories();
+
+                var productDtos = _productService.GetAllProducts(categoryId, sortBy, search);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return PartialView("_ProductsTable", productDtos);
+
+                return View(productDtos);
             }
 
-            // AJAX call → return just the table HTML (partial view)
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            catch (Exception ex)
             {
-                return PartialView("_ProductsTable", productDtos);
+                _logger.LogError(ex, "Unexpected error while loading product list.");
+                throw; // let the global handler take over — don't swallow it silently
             }
-
-            // Normal page load → return the full page
-            return View(productDtos);
         }
-
-
 
         //View product details
-
         [Route("Details/{id}")]
-        //[Route("Products/ViewDetails/{id}")]
-
         public IActionResult ViewDetails(int id)
         {
-            Products product = _dbfirstDbContext.Products.Find(id);
-            if (product == null)
+            try
             {
-                return NotFound();
-            }
-            var productDto = _mapper.Map<ProductDTO>(product);
-            var category = _dbfirstDbContext.Categories.Find(productDto.CategoryId);
-            productDto.CategoryName = category?.CategoryName;
+                var productDto = _productService.GetProductById(id);
+                if (productDto == null)
+                {
+                    return NotFound();
+                }
 
-            ViewData["PageTitle"] = "Product Details of - " + product.ProductName;
-            return View(productDto);
+                ViewData["PageTitle"] = "Product Details of - " + productDto.ProductName;
+                return View(productDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while loading product details. ProductId={ProductId}", id);
+                throw;
+            }
         }
 
-
         // Add new product
-
-        //[Route("Products/Create")]
         [Authorize(Roles = "Admin")]
         [Route("AddProduct")]
         public IActionResult Create()
         {
-            ViewBag.Categories = _dbfirstDbContext.Categories.ToList();
+            ViewBag.Categories = _productService.GetAllCategories();
             return View();
         }
 
@@ -95,82 +81,95 @@ namespace Ecommerce_DBFirst.Controllers
         {
             if (ModelState.IsValid)
             {
-                var product = _mapper.Map<Products>(productDto);
-                _dbfirstDbContext.Products.Add(product);
-                _dbfirstDbContext.SaveChanges();
-
-                TempData["SuccessMessage"] = "Product Added Successfully✅";
-                return RedirectToAction("Index");
+                try
+                {
+                    _productService.CreateProduct(productDto);
+                    TempData["SuccessMessage"] = "Product Added Successfully✅";
+                    return RedirectToAction("Index");
+                }
+                catch (Exception)
+                {
+                    ViewBag.ErrorMessage = "Something went wrong while saving the product❌";
+                    ViewBag.Categories = _productService.GetAllCategories();
+                    return View(productDto);
+                }
             }
-            ViewBag.Categories = _dbfirstDbContext.Categories.ToList();
+            ViewBag.Categories = _productService.GetAllCategories();
             ViewBag.ErrorMessage = "Failed to add product. Please check the form❌";
             return View(productDto);
         }
 
         // Edit product
-
         [Authorize(Roles = "Admin")]
         [Route("UpdateProduct/{id}")]
-        //[Route("Products/Edit/{id}")]
         public IActionResult Edit(int id)
         {
-            var product = _dbfirstDbContext.Products.Find(id);
-            if (product == null) return NotFound();
-            ViewBag.Categories = _dbfirstDbContext.Categories.ToList();
-            var productDto = _mapper.Map<ProductDTO>(product);
-            return View(productDto);
+            try
+            {
+                var productDto = _productService.GetProductById(id);
+                if (productDto == null) return NotFound();
+
+                ViewBag.Categories = _productService.GetAllCategories();
+                return View(productDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while loading product for edit. ProductId={ProductId}", id);
+                throw;
+            }
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [Route("UpdateProduct")]
-        //[Route("Products/Edit")]
         public IActionResult Edit(ProductDTO productDto)
         {
             if (ModelState.IsValid)
             {
-                var product = _mapper.Map<Products>(productDto);
-                _dbfirstDbContext.Products.Update(product);
-                _dbfirstDbContext.SaveChanges();
-                return RedirectToAction("Index");
+                try
+                {
+                    _productService.UpdateProduct(productDto);
+                    return RedirectToAction("Index");
+                }
+                catch (Exception)
+                {
+                    ViewBag.ErrorMessage = "Something went wrong while updating the product❌";
+                    return View(productDto);
+                }
             }
             return View(productDto);
         }
 
-
         // Delete product
-
-
-        //[Route("Products/Delete/{id}")]
-        //[Route("DeleteProduct/{id}")]
-        //public IActionResult Delete(int id)
-        //{
-        //    var product = _dbfirstDbContext.Products.Find(id);
-        //    if (product == null) return NotFound();
-        //    _dbfirstDbContext.Products.Remove(product);
-        //    _dbfirstDbContext.SaveChanges();
-
-        //    return RedirectToAction("Index");
-        //}
-
-
         [Authorize(Roles = "Admin")]
         [Route("DeleteProduct/{id}")]
         public IActionResult Delete(int id)
         {
-            var product = _dbfirstDbContext.Products.Find(id);
-            if (product == null) return NotFound();
-
-            _dbfirstDbContext.Products.Remove(product);
-            _dbfirstDbContext.SaveChanges();
-
-            // If the request came from jQuery/AJAX, return JSON instead of redirecting
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            try
             {
-                return Json(new { success = true });
-            }
+                _productService.DeleteProduct(id);
 
-            return RedirectToAction("Index");
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true });
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (Exception)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "Failed to delete product." });
+                }
+
+                TempData["ErrorMessage"] = "Something went wrong while deleting the product❌";
+                return RedirectToAction("Index");
+            }
         }
     }
 }

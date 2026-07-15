@@ -1,4 +1,5 @@
 ﻿using Ecommerce_DBFirst.Models;
+using Ecommerce_DBFirst.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,23 +8,31 @@ namespace Ecommerce_DBFirst.Controllers
     [Authorize]
     public class CategoryController : Controller
     {
-        private readonly EcommerceDbfirstDbContext _dbfirstDbContext;
-        public CategoryController(EcommerceDbfirstDbContext dbfirstDbContext)
+        private readonly ICategoryService _categoryService;
+        private readonly ILogger<CategoryController> _logger;
+
+        public CategoryController(ICategoryService categoryService, ILogger<CategoryController> logger)
         {
-            _dbfirstDbContext = dbfirstDbContext;
+            _categoryService = categoryService;
+            _logger = logger;
         }
 
-        //List all categories
-        //[Route("")]
         [Route("ViewAllCategories")]
         public IActionResult Index()
         {
-            ViewBag.PageTitle = "View All Categories";
-            var categories = _dbfirstDbContext.Categories.ToList();
-            return View(categories);
+            try
+            {
+                ViewBag.PageTitle = "View All Categories";
+                var categories = _categoryService.GetAllCategories();
+                return View(categories);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while loading category list.");
+                throw;
+            }
         }
 
-        //Add Category
         [Authorize(Roles = "Admin")]
         [Route("AddCategory")]
         public IActionResult Create()
@@ -38,27 +47,35 @@ namespace Ecommerce_DBFirst.Controllers
         {
             if (ModelState.IsValid)
             {
-                _dbfirstDbContext.Categories.Add(category);
-                _dbfirstDbContext.SaveChanges();
-                return RedirectToAction("Index");
-                //return Content("hi");
-
+                try
+                {
+                    _categoryService.CreateCategory(category);
+                    return RedirectToAction("Index");
+                }
+                catch (Exception)
+                {
+                    ViewBag.ErrorMessage = "Something went wrong while saving the category❌";
+                    return View(category);
+                }
             }
             return View(category);
-            //return Content("hii");
         }
 
-
-
-
-        //Edit category
         [Authorize(Roles = "Admin")]
         [Route("UpdateCategory/{id}")]
         public IActionResult Edit(int id)
         {
-            var category = _dbfirstDbContext.Categories.Find(id);
-            if (category == null) return NotFound();
-            return View(category);
+            try
+            {
+                var category = _categoryService.GetCategoryById(id);
+                if (category == null) return NotFound();
+                return View(category);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while loading category for edit. CategoryId={CategoryId}", id);
+                throw;
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -68,9 +85,16 @@ namespace Ecommerce_DBFirst.Controllers
         {
             if (ModelState.IsValid)
             {
-                _dbfirstDbContext.Categories.Update(category);
-                _dbfirstDbContext.SaveChanges();
-                return RedirectToAction("Index");
+                try
+                {
+                    _categoryService.UpdateCategory(category);
+                    return RedirectToAction("Index");
+                }
+                catch (Exception)
+                {
+                    ViewBag.ErrorMessage = "Something went wrong while updating the category❌";
+                    return View(category);
+                }
             }
             return View(category);
         }
