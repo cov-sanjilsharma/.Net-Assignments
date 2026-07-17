@@ -9,7 +9,7 @@ namespace Ecommerce_DBFirst.Dtos
 
         public decimal Price { get; set; }
 
-        public int StockQuantit { get; set; }
+        public int StockQuantity { get; set; }
         public int CategoryId { get; set; }
 
         public string ?CategoryName{ get; set; }
