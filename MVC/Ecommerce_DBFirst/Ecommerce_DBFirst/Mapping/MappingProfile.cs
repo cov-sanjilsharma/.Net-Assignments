@@ -9,8 +9,9 @@ namespace Ecommerce_DBFirst.Mapping
         {
             CreateMap<Category, CategoryDTO>().ReverseMap();
             CreateMap<Products, ProductDTO>()
-                .ForMember(dest => dest.CategoryName, opt => opt.Ignore())
-                .ReverseMap();
+    .ForMember(dest => dest.CategoryName, opt => opt.Ignore())
+    .ReverseMap()
+    .ForMember(dest => dest.Category, opt => opt.Ignore());
         }
     }
 }

@@ -27,8 +27,9 @@ namespace Ecommerce_DBFirst.Services
         {
             _logger.LogInformation("Fetching product list. CategoryId={CategoryId}, SortBy={SortBy}, Search={Search}", categoryId, sortBy, search);
 
-            var categories = await ((IQueryable<Category>)_dbfirstDbContext.Categories).ToListAsync();
-            var products = _dbfirstDbContext.Products.AsQueryable();
+            var products = _dbfirstDbContext.Products
+                .Include(p => p.Category)   // fetch the related Category in the same query
+                .AsQueryable();
 
             if (categoryId.HasValue)
                 products = products.Where(p => p.CategoryId == categoryId);
@@ -39,17 +40,22 @@ namespace Ecommerce_DBFirst.Services
             if (!string.IsNullOrEmpty(search))
                 products = products.Where(p => p.ProductName.Contains(search));
 
-            var productDtos = _mapper.Map<List<ProductDTO>>(await products.ToListAsync());
+            var productList = await products.ToListAsync();
 
-            foreach (var dto in productDtos)
-                dto.CategoryName = categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId)?.CategoryName;
+            var productDtos = _mapper.Map<List<ProductDTO>>(productList);
+
+            for (int i = 0; i < productList.Count; i++)
+                productDtos[i].CategoryName = productList[i].Category?.CategoryName;
 
             return productDtos;
         }
 
         public async Task<ProductDTO?> GetProductById(int id)
         {
-            var product = await _dbfirstDbContext.Products.FindAsync(id);
+            var product = await _dbfirstDbContext.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.ProductId == id);
+
             if (product == null)
             {
                 _logger.LogWarning("Product not found. ProductId={ProductId}", id);
@@ -57,8 +63,7 @@ namespace Ecommerce_DBFirst.Services
             }
 
             var productDto = _mapper.Map<ProductDTO>(product);
-            var category = await _dbfirstDbContext.Categories.FindAsync(productDto.CategoryId);
-            productDto.CategoryName = category?.CategoryName;
+            productDto.CategoryName = product.Category?.CategoryName;
             return productDto;
         }
 

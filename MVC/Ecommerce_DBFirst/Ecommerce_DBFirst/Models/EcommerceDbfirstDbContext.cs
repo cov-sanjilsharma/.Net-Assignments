@@ -56,6 +56,10 @@ public partial class EcommerceDbfirstDbContext : DbContext
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.ProductName).HasMaxLength(50);
             entity.Property(e => e.StockQuantity).HasColumnName("StockQuantit");
+
+            entity.HasOne(p => p.Category)
+          .WithMany(c => c.Products)
+          .HasForeignKey(p => p.CategoryId);
         });
 
         OnModelCreatingPartial(modelBuilder);
