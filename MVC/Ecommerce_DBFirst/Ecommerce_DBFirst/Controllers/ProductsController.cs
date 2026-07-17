@@ -20,40 +20,37 @@ namespace Ecommerce_DBFirst.Controllers
         // List all products
         [Route("")]
         [Route("ViewAllProducts")]
-        public IActionResult Index(int? categoryId, string sortBy, string search)
+        public async Task<IActionResult> Index(int? categoryId, string sortBy, string search)
         {
             try
             {
-                //throw new Exception("Test exception for global handler verification");   // TEMPORARY - remove after testing
                 ViewBag.PageTitle = "Displaying All Products";
-                ViewBag.Categories = _productService.GetAllCategories();
+                ViewBag.Categories = await _productService.GetAllCategories();
 
-                var productDtos = _productService.GetAllProducts(categoryId, sortBy, search);
+                var productDtos = await _productService.GetAllProducts(categoryId, sortBy, search);
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                     return PartialView("_ProductsTable", productDtos);
 
                 return View(productDtos);
             }
-
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error while loading product list.");
-                throw; // let the global handler take over — don't swallow it silently
+                throw;
             }
         }
 
-        //View product details
+        // View product details
         [Route("Details/{id}")]
-        public IActionResult ViewDetails(int id)
+        public async Task<IActionResult> ViewDetails(int id)
         {
             try
             {
-                var productDto = _productService.GetProductById(id);
+                var productDto = await _productService.GetProductById(id);
+
                 if (productDto == null)
-                {
                     return NotFound();
-                }
 
                 ViewData["PageTitle"] = "Product Details of - " + productDto.ProductName;
                 return View(productDto);
@@ -68,48 +65,57 @@ namespace Ecommerce_DBFirst.Controllers
         // Add new product
         [Authorize(Roles = "Admin")]
         [Route("AddProduct")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewBag.Categories = _productService.GetAllCategories();
+            ViewBag.Categories = await _productService.GetAllCategories();
             return View();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [Route("AddProduct")]
-        public IActionResult Create(ProductDTO productDto)
+        public async Task<IActionResult> Create(ProductDTO productDto)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _productService.CreateProduct(productDto);
+                    await _productService.CreateProduct(productDto);
+
                     TempData["SuccessMessage"] = "Product Added Successfully✅";
-                    return RedirectToAction("Index");
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error while creating product.");
+
                     ViewBag.ErrorMessage = "Something went wrong while saving the product❌";
-                    ViewBag.Categories = _productService.GetAllCategories();
+                    ViewBag.Categories = await _productService.GetAllCategories();
+
                     return View(productDto);
                 }
             }
-            ViewBag.Categories = _productService.GetAllCategories();
+
+            ViewBag.Categories = await _productService.GetAllCategories();
             ViewBag.ErrorMessage = "Failed to add product. Please check the form❌";
+
             return View(productDto);
         }
 
         // Edit product
         [Authorize(Roles = "Admin")]
         [Route("UpdateProduct/{id}")]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             try
             {
-                var productDto = _productService.GetProductById(id);
-                if (productDto == null) return NotFound();
+                var productDto = await _productService.GetProductById(id);
 
-                ViewBag.Categories = _productService.GetAllCategories();
+                if (productDto == null)
+                    return NotFound();
+
+                ViewBag.Categories = await _productService.GetAllCategories();
+
                 return View(productDto);
             }
             catch (Exception ex)
@@ -122,53 +128,67 @@ namespace Ecommerce_DBFirst.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [Route("UpdateProduct")]
-        public IActionResult Edit(ProductDTO productDto)
+        public async Task<IActionResult> Edit(ProductDTO productDto)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _productService.UpdateProduct(productDto);
-                    return RedirectToAction("Index");
+                    await _productService.UpdateProduct(productDto);
+
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error while updating product. ProductId={ProductId}", productDto.ProductId);
+
                     ViewBag.ErrorMessage = "Something went wrong while updating the product❌";
+                    ViewBag.Categories = await _productService.GetAllCategories();
+
                     return View(productDto);
                 }
             }
+
+            ViewBag.Categories = await _productService.GetAllCategories();
+
             return View(productDto);
         }
 
         // Delete product
         [Authorize(Roles = "Admin")]
         [Route("DeleteProduct/{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                _productService.DeleteProduct(id);
+                await _productService.DeleteProduct(id);
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new { success = true });
                 }
 
-                return RedirectToAction("Index");
+                return RedirectToAction(nameof(Index));
             }
             catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while deleting product. ProductId={ProductId}", id);
+
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { success = false, message = "Failed to delete product." });
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Failed to delete product."
+                    });
                 }
 
                 TempData["ErrorMessage"] = "Something went wrong while deleting the product❌";
-                return RedirectToAction("Index");
+                return RedirectToAction(nameof(Index));
             }
         }
     }

@@ -1,115 +1,61 @@
-using AutoMapper;
-using Ecommerce_DBFirst.Dtos;
 using Ecommerce_DBFirst.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce_DBFirst.Services
 {
-    public class ProductService : IProductService
+    public class CategoryService : ICategoryService
     {
         private readonly EcommerceDbfirstDbContext _dbfirstDbContext;
-        private readonly IMapper _mapper;
-        private readonly ILogger<ProductService> _logger;
+        private readonly ILogger<CategoryService> _logger;
 
-        public ProductService(EcommerceDbfirstDbContext dbfirstDbContext, IMapper mapper, ILogger<ProductService> logger)
+        public CategoryService(EcommerceDbfirstDbContext dbfirstDbContext, ILogger<CategoryService> logger)
         {
             _dbfirstDbContext = dbfirstDbContext;
-            _mapper = mapper;
             _logger = logger;
         }
 
-        public List<Category> GetAllCategories()
+        public async Task<List<Category>> GetAllCategories()
         {
-            return _dbfirstDbContext.Categories.ToList();
-        }
-        public List<ProductDTO> GetAllProducts(int? categoryId, string sortBy, string search)
-        {
-            _logger.LogInformation("Fetching product list. CategoryId={CategoryId}, SortBy={SortBy}, Search={Search}", categoryId, sortBy, search);
-
-            var categories = _dbfirstDbContext.Categories.ToList();
-            var products = _dbfirstDbContext.Products.AsQueryable();
-
-            if (categoryId.HasValue)
-                products = products.Where(p => p.CategoryId == categoryId);
-
-            if (sortBy == "price")
-                products = products.OrderBy(p => p.Price);
-
-            if (!string.IsNullOrEmpty(search))
-                products = products.Where(p => p.ProductName.Contains(search));
-
-            var productDtos = _mapper.Map<List<ProductDTO>>(products.ToList());
-
-            foreach (var dto in productDtos)
-                dto.CategoryName = categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId)?.CategoryName;
-
-            return productDtos;
+            _logger.LogInformation("Fetching category list.");
+            return await _dbfirstDbContext.Categories.ToListAsync();
         }
 
-        public ProductDTO? GetProductById(int id)
+        public async Task<Category?> GetCategoryById(int id)
         {
-            var product = _dbfirstDbContext.Products.Find(id);
-            if (product == null)
+            var category = await _dbfirstDbContext.Categories.FindAsync(id);
+            if (category == null)
             {
-                _logger.LogWarning("Product not found. ProductId={ProductId}", id);
-                return null;
+                _logger.LogWarning("Category not found. CategoryId={CategoryId}", id);
             }
-
-            var productDto = _mapper.Map<ProductDTO>(product);
-            var category = _dbfirstDbContext.Categories.Find(productDto.CategoryId);
-            productDto.CategoryName = category?.CategoryName;
-            return productDto;
+            return category;
         }
 
-        public void CreateProduct(ProductDTO productDto)
+        public async Task CreateCategory(Category category)
         {
             try
             {
-                var product = _mapper.Map<Products>(productDto);
-                _dbfirstDbContext.Products.Add(product);
-                _dbfirstDbContext.SaveChanges();
-                _logger.LogInformation("Product created successfully. ProductId={ProductId}, ProductName={ProductName}", product.ProductId, product.ProductName);
+                await _dbfirstDbContext.Categories.AddAsync(category);
+                await _dbfirstDbContext.SaveChangesAsync();
+                _logger.LogInformation("Category created successfully. CategoryId={CategoryId}, CategoryName={CategoryName}", category.CategoryId, category.CategoryName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while creating product. ProductName={ProductName}", productDto.ProductName);
-                throw; // let the controller decide how to respond to the user
-            }
-        }
-
-        public void UpdateProduct(ProductDTO productDto)
-        {
-            try
-            {
-                var product = _mapper.Map<Products>(productDto);
-                _dbfirstDbContext.Products.Update(product);
-                _dbfirstDbContext.SaveChanges();
-                _logger.LogInformation("Product updated successfully. ProductId={ProductId}", product.ProductId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while updating product. ProductId={ProductId}", productDto.ProductId);
+                _logger.LogError(ex, "Error occurred while creating category. CategoryName={CategoryName}", category.CategoryName);
                 throw;
             }
         }
 
-        public void DeleteProduct(int id)
+        public async Task UpdateCategory(Category category)
         {
-            var product = _dbfirstDbContext.Products.Find(id);
-            if (product == null)
-            {
-                _logger.LogWarning("Product not found for delete. ProductId={ProductId}", id);
-                throw new KeyNotFoundException($"Product {id} not found.");
-            }
-
             try
             {
-                _dbfirstDbContext.Products.Remove(product);
-                _dbfirstDbContext.SaveChanges();
-                _logger.LogInformation("Product deleted successfully. ProductId={ProductId}", id);
+                _dbfirstDbContext.Categories.Update(category);
+                await _dbfirstDbContext.SaveChangesAsync();
+                _logger.LogInformation("Category updated successfully. CategoryId={CategoryId}", category.CategoryId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while deleting product. ProductId={ProductId}", id);
+                _logger.LogError(ex, "Error occurred while updating category. CategoryId={CategoryId}", category.CategoryId);
                 throw;
             }
         }

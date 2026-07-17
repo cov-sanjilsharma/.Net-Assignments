@@ -11,19 +11,23 @@ namespace Ecommerce_DBFirst.Controllers
         private readonly ICategoryService _categoryService;
         private readonly ILogger<CategoryController> _logger;
 
-        public CategoryController(ICategoryService categoryService, ILogger<CategoryController> logger)
+        public CategoryController(
+            ICategoryService categoryService,
+            ILogger<CategoryController> logger)
         {
             _categoryService = categoryService;
             _logger = logger;
         }
 
         [Route("ViewAllCategories")]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             try
             {
                 ViewBag.PageTitle = "View All Categories";
-                var categories = _categoryService.GetAllCategories();
+
+                var categories = await _categoryService.GetAllCategories();
+
                 return View(categories);
             }
             catch (Exception ex)
@@ -41,62 +45,78 @@ namespace Ecommerce_DBFirst.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [Route("AddCategory")]
         [HttpPost]
-        public IActionResult Create(Category category)
+        [Route("AddCategory")]
+        public async Task<IActionResult> Create(Category category)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(category);
+
+            try
             {
-                try
-                {
-                    _categoryService.CreateCategory(category);
-                    return RedirectToAction("Index");
-                }
-                catch (Exception)
-                {
-                    ViewBag.ErrorMessage = "Something went wrong while saving the category❌";
-                    return View(category);
-                }
+                await _categoryService.CreateCategory(category);
+
+                return RedirectToAction(nameof(Index));
             }
-            return View(category);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating category.");
+
+                ViewBag.ErrorMessage = "Something went wrong while saving the category ❌";
+
+                return View(category);
+            }
         }
 
         [Authorize(Roles = "Admin")]
         [Route("UpdateCategory/{id}")]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             try
             {
-                var category = _categoryService.GetCategoryById(id);
-                if (category == null) return NotFound();
+                var category = await _categoryService.GetCategoryById(id);
+
+                if (category == null)
+                    return NotFound();
+
                 return View(category);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while loading category for edit. CategoryId={CategoryId}", id);
+                _logger.LogError(
+                    ex,
+                    "Unexpected error while loading category for edit. CategoryId={CategoryId}",
+                    id);
+
                 throw;
             }
         }
 
         [Authorize(Roles = "Admin")]
-        [Route("UpdateCategory")]
         [HttpPost]
-        public IActionResult Edit(Category category)
+        [Route("UpdateCategory")]
+        public async Task<IActionResult> Edit(Category category)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(category);
+
+            try
             {
-                try
-                {
-                    _categoryService.UpdateCategory(category);
-                    return RedirectToAction("Index");
-                }
-                catch (Exception)
-                {
-                    ViewBag.ErrorMessage = "Something went wrong while updating the category❌";
-                    return View(category);
-                }
+                await _categoryService.UpdateCategory(category);
+
+                return RedirectToAction(nameof(Index));
             }
-            return View(category);
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error while updating category. CategoryId={CategoryId}",
+                    category.CategoryId);
+
+                ViewBag.ErrorMessage = "Something went wrong while updating the category ❌";
+
+                return View(category);
+            }
         }
     }
 }

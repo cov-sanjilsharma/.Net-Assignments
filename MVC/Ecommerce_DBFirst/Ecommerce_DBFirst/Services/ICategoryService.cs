@@ -4,9 +4,9 @@ namespace Ecommerce_DBFirst.Services
 {
     public interface ICategoryService
     {
-        List<Category> GetAllCategories();
-        Category? GetCategoryById(int id);
-        void CreateCategory(Category category);
-        void UpdateCategory(Category category);
+        Task<List<Category>> GetAllCategories();
+        Task<Category?> GetCategoryById(int id);
+        Task CreateCategory(Category category);
+        Task UpdateCategory(Category category);
     }
 }

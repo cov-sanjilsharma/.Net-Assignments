@@ -5,11 +5,11 @@ namespace Ecommerce_DBFirst.Services
 {
     public interface IProductService
     {
-        List<ProductDTO> GetAllProducts(int? categoryId, string sortBy, string search);
-        ProductDTO? GetProductById(int id);
-        void CreateProduct(ProductDTO productDto);
-        void UpdateProduct(ProductDTO productDto);
-        void DeleteProduct(int id);
-        List<Category> GetAllCategories();   // add this line
+        Task<List<ProductDTO>> GetAllProducts(int? categoryId, string sortBy, string search);
+        Task<ProductDTO?> GetProductById(int id);
+        Task CreateProduct(ProductDTO productDto);
+        Task UpdateProduct(ProductDTO productDto);
+        Task DeleteProduct(int id);
+        Task<List<Category>> GetAllCategories();   // add this line
     }
 }

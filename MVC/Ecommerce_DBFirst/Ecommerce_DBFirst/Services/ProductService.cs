@@ -1,6 +1,7 @@
 using AutoMapper;
 using Ecommerce_DBFirst.Dtos;
 using Ecommerce_DBFirst.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce_DBFirst.Services
 {
@@ -17,15 +18,16 @@ namespace Ecommerce_DBFirst.Services
             _logger = logger;
         }
 
-        public List<Category> GetAllCategories()
+        public async Task<List<Category>> GetAllCategories()
         {
-            return _dbfirstDbContext.Categories.ToList();
+            return await ((IQueryable<Category>)_dbfirstDbContext.Categories).ToListAsync();
         }
-        public List<ProductDTO> GetAllProducts(int? categoryId, string sortBy, string search)
+
+        public async Task<List<ProductDTO>> GetAllProducts(int? categoryId, string sortBy, string search)
         {
             _logger.LogInformation("Fetching product list. CategoryId={CategoryId}, SortBy={SortBy}, Search={Search}", categoryId, sortBy, search);
 
-            var categories = _dbfirstDbContext.Categories.ToList();
+            var categories = await ((IQueryable<Category>)_dbfirstDbContext.Categories).ToListAsync();
             var products = _dbfirstDbContext.Products.AsQueryable();
 
             if (categoryId.HasValue)
@@ -37,7 +39,7 @@ namespace Ecommerce_DBFirst.Services
             if (!string.IsNullOrEmpty(search))
                 products = products.Where(p => p.ProductName.Contains(search));
 
-            var productDtos = _mapper.Map<List<ProductDTO>>(products.ToList());
+            var productDtos = _mapper.Map<List<ProductDTO>>(await products.ToListAsync());
 
             foreach (var dto in productDtos)
                 dto.CategoryName = categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId)?.CategoryName;
@@ -45,9 +47,9 @@ namespace Ecommerce_DBFirst.Services
             return productDtos;
         }
 
-        public ProductDTO? GetProductById(int id)
+        public async Task<ProductDTO?> GetProductById(int id)
         {
-            var product = _dbfirstDbContext.Products.Find(id);
+            var product = await _dbfirstDbContext.Products.FindAsync(id);
             if (product == null)
             {
                 _logger.LogWarning("Product not found. ProductId={ProductId}", id);
@@ -55,34 +57,34 @@ namespace Ecommerce_DBFirst.Services
             }
 
             var productDto = _mapper.Map<ProductDTO>(product);
-            var category = _dbfirstDbContext.Categories.Find(productDto.CategoryId);
+            var category = await _dbfirstDbContext.Categories.FindAsync(productDto.CategoryId);
             productDto.CategoryName = category?.CategoryName;
             return productDto;
         }
 
-        public void CreateProduct(ProductDTO productDto)
+        public async Task CreateProduct(ProductDTO productDto)
         {
             try
             {
                 var product = _mapper.Map<Products>(productDto);
-                _dbfirstDbContext.Products.Add(product);
-                _dbfirstDbContext.SaveChanges();
+                await _dbfirstDbContext.Products.AddAsync(product);
+                await _dbfirstDbContext.SaveChangesAsync();
                 _logger.LogInformation("Product created successfully. ProductId={ProductId}, ProductName={ProductName}", product.ProductId, product.ProductName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating product. ProductName={ProductName}", productDto.ProductName);
-                throw; // let the controller decide how to respond to the user
+                throw;
             }
         }
 
-        public void UpdateProduct(ProductDTO productDto)
+        public async Task UpdateProduct(ProductDTO productDto)
         {
             try
             {
                 var product = _mapper.Map<Products>(productDto);
                 _dbfirstDbContext.Products.Update(product);
-                _dbfirstDbContext.SaveChanges();
+                await _dbfirstDbContext.SaveChangesAsync();
                 _logger.LogInformation("Product updated successfully. ProductId={ProductId}", product.ProductId);
             }
             catch (Exception ex)
@@ -92,9 +94,9 @@ namespace Ecommerce_DBFirst.Services
             }
         }
 
-        public void DeleteProduct(int id)
+        public async Task DeleteProduct(int id)
         {
-            var product = _dbfirstDbContext.Products.Find(id);
+            var product = await _dbfirstDbContext.Products.FindAsync(id);
             if (product == null)
             {
                 _logger.LogWarning("Product not found for delete. ProductId={ProductId}", id);
@@ -104,7 +106,7 @@ namespace Ecommerce_DBFirst.Services
             try
             {
                 _dbfirstDbContext.Products.Remove(product);
-                _dbfirstDbContext.SaveChanges();
+                await _dbfirstDbContext.SaveChangesAsync();
                 _logger.LogInformation("Product deleted successfully. ProductId={ProductId}", id);
             }
             catch (Exception ex)
