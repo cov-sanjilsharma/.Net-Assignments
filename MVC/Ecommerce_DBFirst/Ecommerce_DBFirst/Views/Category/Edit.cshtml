@@ -1,0 +1,23 @@
+﻿<h2>Edit Category</h2>
+
+
+
+<form method="post" action="/UpdateCategory">
+
+<input type="hidden" name="CategoryId" value="@Model.CategoryId" />
+
+    <table>
+        
+        <tr>
+            <td>Category Name:</td>
+            <td><input type="text" name="CategoryName" value="@Model?.CategoryName" /></td>
+        </tr>
+        
+        <tr>
+            <td></td>
+            <td><button type="submit">Edit Category</button></td>
+        </tr>
+    </table>
+</form>
+
+<a href="/ViewAllCategories">Back to List</a>

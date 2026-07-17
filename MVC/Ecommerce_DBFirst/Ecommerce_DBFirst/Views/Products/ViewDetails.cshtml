@@ -1,0 +1,30 @@
+﻿<h2>@ViewData["PageTitle"]</h2>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Product ID</th>
+        <td>@Model.ProductId</td>
+    </tr>
+    <tr>
+        <th>Product Name</th>
+        <td>@Model.ProductName</td>
+    </tr>
+    <tr>
+        <th>Product Price</th>
+        <td>@Model.Price</td>
+    </tr>
+    <tr>
+        <th>Product Quantity</th>
+        <td>@Model.StockQuantity</td>
+    </tr>
+    <tr>
+        <th>Product Category ID</th>
+        <td>@Model.CategoryId</td>
+    </tr>
+    <tr>
+        <th>Category Name</th>
+        <td>@Model.CategoryName</td>
+    </tr>
+</table>
+
+<a href="/ViewAllProducts">Back to List</a>
