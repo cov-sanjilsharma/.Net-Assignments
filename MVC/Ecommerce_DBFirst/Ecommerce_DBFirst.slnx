@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="Ecommerce.Api/Ecommerce.Api.csproj" Id="a6c231be-9b07-4d2c-9351-d654631e100c" />
   <Project Path="Ecommerce_DBFirst/Ecommerce_DBFirst.csproj" />
 </Solution>

@@ -13,6 +13,11 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddHttpClient("InventoryApi", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7015/"); // the Ecommerce.Api URL from Step 5
+});
+
 builder.Services.AddDbContext<EcommerceDbfirstDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
