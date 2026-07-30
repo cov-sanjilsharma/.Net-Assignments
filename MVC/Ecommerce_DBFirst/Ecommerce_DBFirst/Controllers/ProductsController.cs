@@ -174,6 +174,23 @@ namespace Ecommerce_DBFirst.Controllers
             {
                 return NotFound();
             }
+            catch (InvalidOperationException ex)
+            {
+                // e.g. product still has Inventory records referencing it
+                _logger.LogWarning(ex, "Delete blocked by data constraint. ProductId={ProductId}", id);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = ex.Message
+                    });
+                }
+
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while deleting product. ProductId={ProductId}", id);
