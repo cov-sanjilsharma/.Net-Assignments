@@ -165,7 +165,7 @@ namespace Ecommerce_DBFirst.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { success = true });
+                    return Json(new { success = true, message = $"Product {id} deleted successfully." });
                 }
 
                 return RedirectToAction(nameof(Index));

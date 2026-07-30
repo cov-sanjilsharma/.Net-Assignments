@@ -1,0 +1,31 @@
+﻿@model List<Ecommerce_DBFirst.Dtos.InventoryDTO>
+@{
+    ViewData["Title"] = "Inventory";
+}
+
+<h1>Inventory</h1>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Product Id</th>
+            <th>Quantity</th>
+            <th>Last Updated</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ProductId</td>
+                <td>@item.Quantity</td>
+                <td>@item.LastUpdated</td>
+            </tr>
+        }
+    </tbody>
+</table>

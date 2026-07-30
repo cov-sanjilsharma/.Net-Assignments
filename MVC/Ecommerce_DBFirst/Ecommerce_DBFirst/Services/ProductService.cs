@@ -114,6 +114,14 @@ namespace Ecommerce_DBFirst.Services
                 await _dbfirstDbContext.SaveChangesAsync();
                 _logger.LogInformation("Product deleted successfully. ProductId={ProductId}", id);
             }
+            catch (DbUpdateException ex)
+            {
+                // Thrown when the database rejects the delete because of a foreign key
+                // constraint (e.g. the product still has Inventory records pointing at it).
+                _logger.LogWarning(ex, "Cannot delete product because it is referenced elsewhere. ProductId={ProductId}", id);
+                throw new InvalidOperationException(
+                    $"Cannot delete product {id}: it still has related records (e.g. inventory) referencing it. Remove those first.");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while deleting product. ProductId={ProductId}", id);

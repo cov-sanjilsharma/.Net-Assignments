@@ -6,7 +6,9 @@
         <th>Product Name</th>
         <th>Price</th>
         <th>Stock Quantity</th>
+
         <th>Category Name</th>
+
     </tr>
     @foreach (var product in Model)
     {
@@ -16,6 +18,9 @@
             <td>@product.Price</td>
             <td>@product.StockQuantity</td>
             <td>@product.CategoryName</td>
+            <td>
+                <a class="btn btn-sm btn-secondary" href="/Inventory/ForProduct/@product.ProductId">Check Stock</a>
+            </td>
             <td> <a href="/Details/@product.ProductId">Product Details</a> </td>
             @if (User.IsInRole("Admin"))
             {

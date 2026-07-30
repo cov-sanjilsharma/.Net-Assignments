@@ -1,0 +1,27 @@
+﻿@model Ecommerce_DBFirst.Dtos.InventoryDTO
+
+<h2>Stock for Product #@Model.ProductId</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div style="color:red; font-weight:bold;">
+        @ViewBag.Error
+    </div>
+}
+
+<table class="table">
+    <tr>
+        <th>Product Id</th>
+        <td>@Model.ProductId</td>
+    </tr>
+    <tr>
+        <th>Quantity in Stock</th>
+        <td>@Model.Quantity</td>
+    </tr>
+    <tr>
+        <th>Last Updated</th>
+        <td>@Model.LastUpdated</td>
+    </tr>
+</table>
+
+<a href="/">Back to Products</a>
