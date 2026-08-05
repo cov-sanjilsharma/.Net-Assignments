@@ -1,212 +1,118 @@
-﻿using Ecommerce_DBFirst.Dtos;
-using Ecommerce_DBFirst.Services;
-using Microsoft.AspNetCore.Authorization;
+﻿using Ecommerce.Api.Data;
+using Ecommerce.Api.Dtos;
+using Ecommerce.Api.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-namespace Ecommerce_DBFirst.Controllers
+namespace Ecommerce.Api.Controllers
 {
-    [Authorize]
-    public class ProductsController : Controller
+    [ApiController]
+    [Route("api/[controller]")]
+    public class InventoryController : ControllerBase
     {
-        private readonly IProductService _productService;
-        private readonly ILogger<ProductsController> _logger;
+        private readonly InventoryDbContext _context;
 
-        public ProductsController(IProductService productService, ILogger<ProductsController> logger)
+        public InventoryController(InventoryDbContext context)
         {
-            _productService = productService;
-            _logger = logger;
+            _context = context;
         }
 
-        // List all products
-        [Route("")]
-        [Route("ViewAllProducts")]
-        public async Task<IActionResult> Index(int? categoryId, string sortBy, string search)
+        // GET: api/inventory
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<InventoryDto>>> GetAll()
         {
-            try
-            {
-                ViewBag.PageTitle = "Displaying All Products";
-                ViewBag.Categories = await _productService.GetAllCategories();
+            var items = await _context.Inventories
+                .Select(i => new InventoryDto
+                {
+                    InventoryId = i.InventoryId,
+                    ProductId = i.ProductId,
+                    Quantity = i.Quantity,
+                    LastUpdated = i.LastUpdated
+                })
+                .ToListAsync();
 
-                var productDtos = await _productService.GetAllProducts(categoryId, sortBy, search);
-
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                    return PartialView("_ProductsTable", productDtos);
-
-                return View(productDtos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while loading product list.");
-                throw;
-            }
+            return Ok(items);
         }
 
-        // View product details
-        [Route("Details/{id}")]
-        public async Task<IActionResult> ViewDetails(int id)
+        // GET: api/inventory/product/5
+        [HttpGet("product/{productId}")]
+        public async Task<ActionResult<InventoryDto>> GetByProductId(int productId)
         {
-            try
-            {
-                var productDto = await _productService.GetProductById(id);
+            var item = await _context.Inventories
+                .Where(i => i.ProductId == productId)
+                .Select(i => new InventoryDto
+                {
+                    InventoryId = i.InventoryId,
+                    ProductId = i.ProductId,
+                    Quantity = i.Quantity,
+                    LastUpdated = i.LastUpdated
+                })
+                .FirstOrDefaultAsync();
 
-                if (productDto == null)
-                    return NotFound();
+            if (item == null)
+                return NotFound(new { message = $"No inventory record found for product {productId}." });
 
-                ViewData["PageTitle"] = "Product Details of - " + productDto.ProductName;
-                return View(productDto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while loading product details. ProductId={ProductId}", id);
-                throw;
-            }
+            return Ok(item);
         }
 
-        // Add new product
-        [Authorize(Roles = "Admin")]
-        [Route("AddProduct")]
-        public async Task<IActionResult> Create()
-        {
-            ViewBag.Categories = await _productService.GetAllCategories();
-            return View();
-        }
-
-        [Authorize(Roles = "Admin")]
+        // POST: api/inventory
         [HttpPost]
-        [Route("AddProduct")]
-        public async Task<IActionResult> Create(ProductDTO productDto)
+        public async Task<ActionResult<InventoryDto>> Create([FromBody] InventoryCreateDto dto)
         {
-            if (ModelState.IsValid)
+            if (dto.Quantity < 0)
+                return BadRequest(new { message = "Quantity cannot be negative." });
+
+            var entity = new Inventory
             {
-                try
-                {
-                    await _productService.CreateProduct(productDto);
+                ProductId = dto.ProductId,
+                Quantity = dto.Quantity,
+                LastUpdated = DateTime.Now
+            };
 
-                    TempData["SuccessMessage"] = "Product Added Successfully✅";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error while creating product.");
+            _context.Inventories.Add(entity);
+            await _context.SaveChangesAsync();
 
-                    ViewBag.ErrorMessage = "Something went wrong while saving the product❌";
-                    ViewBag.Categories = await _productService.GetAllCategories();
+            var result = new InventoryDto
+            {
+                InventoryId = entity.InventoryId,
+                ProductId = entity.ProductId,
+                Quantity = entity.Quantity,
+                LastUpdated = entity.LastUpdated
+            };
 
-                    return View(productDto);
-                }
-            }
-
-            ViewBag.Categories = await _productService.GetAllCategories();
-            ViewBag.ErrorMessage = "Failed to add product. Please check the form❌";
-
-            return View(productDto);
+            return CreatedAtAction(nameof(GetByProductId), new { productId = entity.ProductId }, result);
         }
 
-        // Edit product
-        [Authorize(Roles = "Admin")]
-        [Route("UpdateProduct/{id}")]
-        public async Task<IActionResult> Edit(int id)
+        // PUT: api/inventory/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateStock(int id, [FromBody] InventoryUpdateDto dto)
         {
-            try
-            {
-                var productDto = await _productService.GetProductById(id);
+            if (dto.Quantity < 0)
+                return BadRequest(new { message = "Quantity cannot be negative." });
 
-                if (productDto == null)
-                    return NotFound();
+            var entity = await _context.Inventories.FindAsync(id);
+            if (entity == null)
+                return NotFound(new { message = $"Inventory record {id} not found." });
 
-                ViewBag.Categories = await _productService.GetAllCategories();
+            entity.Quantity = dto.Quantity;
+            entity.LastUpdated = DateTime.Now;
+            await _context.SaveChangesAsync();
 
-                return View(productDto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while loading product for edit. ProductId={ProductId}", id);
-                throw;
-            }
+            return NoContent();
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        [Route("UpdateProduct")]
-        public async Task<IActionResult> Edit(ProductDTO productDto)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    await _productService.UpdateProduct(productDto);
-
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error while updating product. ProductId={ProductId}", productDto.ProductId);
-
-                    ViewBag.ErrorMessage = "Something went wrong while updating the product❌";
-                    ViewBag.Categories = await _productService.GetAllCategories();
-
-                    return View(productDto);
-                }
-            }
-
-            ViewBag.Categories = await _productService.GetAllCategories();
-
-            return View(productDto);
-        }
-
-        // Delete product
-        [Authorize(Roles = "Admin")]
-        [Route("DeleteProduct/{id}")]
+        // DELETE: api/inventory/5
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                await _productService.DeleteProduct(id);
+            var entity = await _context.Inventories.FindAsync(id);
+            if (entity == null)
+                return NotFound(new { message = $"Inventory record {id} not found." });
 
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new { success = true, message = $"Product {id} deleted successfully." });
-                }
+            _context.Inventories.Remove(entity);
+            await _context.SaveChangesAsync();
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (InvalidOperationException ex)
-            {
-                // e.g. product still has Inventory records referencing it
-                _logger.LogWarning(ex, "Delete blocked by data constraint. ProductId={ProductId}", id);
-
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = ex.Message
-                    });
-                }
-
-                TempData["ErrorMessage"] = ex.Message;
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while deleting product. ProductId={ProductId}", id);
-
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "Failed to delete product."
-                    });
-                }
-
-                TempData["ErrorMessage"] = "Something went wrong while deleting the product❌";
-                return RedirectToAction(nameof(Index));
-            }
+            return NoContent();
         }
     }
 }

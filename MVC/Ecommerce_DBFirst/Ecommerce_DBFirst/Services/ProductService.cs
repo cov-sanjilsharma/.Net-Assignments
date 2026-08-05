@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Ecommerce_DBFirst.Dtos;
 using Ecommerce_DBFirst.Models;
 using Microsoft.EntityFrameworkCore;
@@ -27,9 +27,8 @@ namespace Ecommerce_DBFirst.Services
         {
             _logger.LogInformation("Fetching product list. CategoryId={CategoryId}, SortBy={SortBy}, Search={Search}", categoryId, sortBy, search);
 
-            var products = _dbfirstDbContext.Products
-                .Include(p => p.Category)   // fetch the related Category in the same query
-                .AsQueryable();
+            var categories = await ((IQueryable<Category>)_dbfirstDbContext.Categories).ToListAsync();
+            var products = _dbfirstDbContext.Products.AsQueryable();
 
             if (categoryId.HasValue)
                 products = products.Where(p => p.CategoryId == categoryId);
@@ -40,22 +39,17 @@ namespace Ecommerce_DBFirst.Services
             if (!string.IsNullOrEmpty(search))
                 products = products.Where(p => p.ProductName.Contains(search));
 
-            var productList = await products.ToListAsync();
+            var productDtos = _mapper.Map<List<ProductDTO>>(await products.ToListAsync());
 
-            var productDtos = _mapper.Map<List<ProductDTO>>(productList);
-
-            for (int i = 0; i < productList.Count; i++)
-                productDtos[i].CategoryName = productList[i].Category?.CategoryName;
+            foreach (var dto in productDtos)
+                dto.CategoryName = categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId)?.CategoryName;
 
             return productDtos;
         }
 
         public async Task<ProductDTO?> GetProductById(int id)
         {
-            var product = await _dbfirstDbContext.Products
-                .Include(p => p.Category)
-                .FirstOrDefaultAsync(p => p.ProductId == id);
-
+            var product = await _dbfirstDbContext.Products.FindAsync(id);
             if (product == null)
             {
                 _logger.LogWarning("Product not found. ProductId={ProductId}", id);
@@ -63,7 +57,8 @@ namespace Ecommerce_DBFirst.Services
             }
 
             var productDto = _mapper.Map<ProductDTO>(product);
-            productDto.CategoryName = product.Category?.CategoryName;
+            var category = await _dbfirstDbContext.Categories.FindAsync(productDto.CategoryId);
+            productDto.CategoryName = category?.CategoryName;
             return productDto;
         }
 
@@ -113,14 +108,6 @@ namespace Ecommerce_DBFirst.Services
                 _dbfirstDbContext.Products.Remove(product);
                 await _dbfirstDbContext.SaveChangesAsync();
                 _logger.LogInformation("Product deleted successfully. ProductId={ProductId}", id);
-            }
-            catch (DbUpdateException ex)
-            {
-                // Thrown when the database rejects the delete because of a foreign key
-                // constraint (e.g. the product still has Inventory records pointing at it).
-                _logger.LogWarning(ex, "Cannot delete product because it is referenced elsewhere. ProductId={ProductId}", id);
-                throw new InvalidOperationException(
-                    $"Cannot delete product {id}: it still has related records (e.g. inventory) referencing it. Remove those first.");
             }
             catch (Exception ex)
             {
