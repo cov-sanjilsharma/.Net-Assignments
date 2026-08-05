@@ -1,14 +1,13 @@
 ﻿@model List<ProductDTO>
 
 <h2>@ViewBag.PageTitle</h2>
+
 <br />
 
 @if (TempData["SuccessMessage"] != null)
 {
     <p style="color:green;">@TempData["SuccessMessage"]</p>
 }
-
-<div id="ajaxSuccessMessage" style="color:green; font-weight:bold; display:none;"></div>
 
 @if (ViewBag.ErrorMessage != null)
 {
@@ -113,18 +112,9 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function (response) {
                         if (response.success) {
-                            $('#ajaxSuccessMessage')
-                                .text(response.message || 'Product deleted successfully.')
-                                .stop(true, true)
-                                .show()
-                                .delay(3000)
-                                .fadeOut(400);
-
                             $('#row-' + id).fadeOut(300, function () {
                                 $(this).remove();
                             });
-                        } else {
-                            alert(response.message || 'Failed to delete product.');
                         }
                     },
                     error: function () {

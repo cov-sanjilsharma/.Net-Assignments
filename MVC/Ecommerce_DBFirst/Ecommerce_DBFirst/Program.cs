@@ -12,10 +12,9 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddHttpClient("InventoryApi", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7015/"); // the Ecommerce.Api URL from Step 5
+    client.BaseAddress = new Uri("https://localhost:7224/");
 });
 
 builder.Services.AddDbContext<EcommerceDbfirstDbContext>(options =>
@@ -24,7 +23,7 @@ builder.Services.AddDbContext<EcommerceDbfirstDbContext>(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
+builder.Services.AddAutoMapper(cfg => { },typeof(MappingProfile));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
