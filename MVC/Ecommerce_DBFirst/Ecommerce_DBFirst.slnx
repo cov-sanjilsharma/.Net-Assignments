@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="../../../../../source/repos/Ecommerce_DBFirst/Ecommerce.Api/Ecommerce.Api.csproj" />
   <Project Path="../../../../../source/repos/Ecommerce_DBFirst/Ecommerce_DBFirst/Ecommerce_DBFirst.csproj" />
+  <Project Path="Ecommerce_DBFirst.NUnitTests/Ecommerce_DBFirst.NUnitTests.csproj" Id="d8b7c70c-e1a4-441e-8193-d24113b50001" />
   <Project Path="Ecommerce_DBFirst.UnitTests/Ecommerce_DBFirst.UnitTests.csproj" Id="73a38720-63dd-4140-bfb3-429835ef94b7" />
 </Solution>
